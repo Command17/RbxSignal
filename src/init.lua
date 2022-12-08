@@ -11,11 +11,10 @@ connection.__index = connection
 
 export type callback = (...any) -> ...any
 
-function connection.new(callback, signal)
+function connection.new(callback)
     return setmetatable({
         Connected = true,
         _callback = callback,
-        _signal = signal
     }, connection)
 end
 
@@ -53,7 +52,7 @@ end
 function signal:Connect(callback: callback) -- Connects a function to the Signal
     assert(typeof(callback) == "function", string.format("Invalid argument #1 (function expected got %s)", typeof(callback)))
 
-    local _connection = connection.new(callback, self)
+    local _connection = connection.new(callback)
 
     table.insert(self._listeners, _connection)
 
@@ -70,7 +69,7 @@ function signal:ConnectParallel(callback: callback) -- Connects a function to th
     task.synchronize()
 end
 
-function signal:Once(callback: callback)
+function signal:Once(callback: callback) -- Disconnects after one fire
     local _connection = nil
 
     _connection = self:Connect(function(...)
@@ -82,7 +81,7 @@ function signal:Once(callback: callback)
     return _connection
 end
 
-function signal:Wait()
+function signal:Wait() -- Waits until the signal is fired
     local waitCoroutine = coroutine.running()
 
     self:Once(function(...)
@@ -110,7 +109,7 @@ function signal:FireParallel(...: any) -- Call the callbacks from every listener
     task.synchronize()
 end
 
-function signal:DisconnectAll()
+function signal:DisconnectAll() -- Disconnects all Listeners
     for i, v in ipairs(self._listeners) do
         v:Disconnect()
     end
@@ -118,7 +117,9 @@ function signal:DisconnectAll()
     table.clear(self._listeners)
 end
 
-signal.Destroy = signal.DisconnectAll
+signal.Destroy = signal.DisconnectAll -- Signal:Destroy() -> Signal:DisconnectAll()
+
+-- Make the signal class strict
 
 setmetatable(signal, {
     __index = function(_, key)
