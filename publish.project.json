@@ -1,5 +1,5 @@
 {
-    "name": "CodifyPluginServe",
+    "name": "Publish",
     "tree": {
       "$className": "DataModel",
       "$ignoreUnknownInstances": true,

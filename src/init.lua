@@ -1,30 +1,52 @@
---[[
-Signal by baum (@baum1000000)
-
-Basicly a RBXScriptConnection but for custom use.
-]]--
-
 -- Connection Class --
 
-local connection = {}
-connection.__index = connection
+--[=[
+    @class Connection
 
+    Connection Class
+]=]
+local Connection = {}
+Connection.__index = Connection
+
+--[=[
+    @within Connection
+    @type callback (...any) -> any
+
+    callback type
+    is exportet
+]=]
 export type callback = (...any) -> ...any
 
-function connection.new(callback)
+--[=[
+    Creates a new connection
+
+    not usable
+
+    @param callback (...any) -> ...any
+
+    @return Connection Object
+]=]
+function Connection.new(callback)
     return setmetatable({
         Connected = true,
         _callback = callback,
-    }, connection)
+    }, Connection)
 end
 
-function connection:Disconnect()
+--[=[
+    Disconnects the connection
+
+    ```lua
+    Connection:Disconnect()
+    ```
+]=]
+function Connection:Disconnect()
     self.Connected = false
 end
 
 -- Make the connection class strict
 
-setmetatable(connection, {
+setmetatable(Connection, {
     __index = function(_, key)
         error(string.format("Attempt to get connection::%s (not a valid member)", tostring(key)))
     end,
@@ -36,30 +58,79 @@ setmetatable(connection, {
 
 -- Signal Class --
 
-local signal = {}
-signal.__index = signal
+--[=[
+    @class Signal
 
-function signal.new() -- Creates a new Signal
+    Signal by baum (@baum1000000)
+
+    Basicly a RBXScriptConnection but for custom use.
+]=]
+local Signal = {}
+Signal.__index = Signal
+
+--[=[
+    Creates a new Signal
+
+    ```lua
+    local signal = Signal.new()
+    ```
+]=]
+function Signal.new()
     return setmetatable({
         _listeners = {},
-    }, signal)
+    }, Signal)
 end
 
-function signal.Is(obj: {any})
-    return getmetatable(obj) == signal
+--[=[
+    Checks if the Obj is a Signal
+
+    @return boolean
+
+    ```lua
+    Signal.Is(RandomSignal)
+    ```
+]=]
+function Signal.Is(obj: {any})
+    return getmetatable(obj) == Signal
 end
 
-function signal:Connect(callback: callback) -- Connects a function to the Signal
+--[=[
+    Connects a function to the signal
+
+    @param callback (...any) -> ...any
+
+    @return Connection Object
+
+    ```lua
+    local Connection = signal:Connect(function(...: any)
+        print(...)
+    end)
+    ```
+]=]
+function Signal:Connect(callback: callback)
     assert(typeof(callback) == "function", string.format("Invalid argument #1 (function expected got %s)", typeof(callback)))
 
-    local _connection = connection.new(callback)
+    local _connection = Connection.new(callback)
 
     table.insert(self._listeners, _connection)
 
     return _connection
 end
 
-function signal:ConnectParallel(callback: callback) -- Connects a function to the Signal in Parallel
+--[=[
+    Connects a function to the signal in parallel
+
+    @param callback (...any) -> ...any
+
+    @return Connection Object
+
+    ```lua
+    local Connection = signal:ConnectParallel(function(...: any)
+        print(...)
+    end)
+    ```
+]=]
+function Signal:ConnectParallel(callback: callback)
     assert(typeof(callback) == "function", string.format("Invalid argument #1 (function expected got %s)", typeof(callback)))
 
     task.desynchronize()
@@ -69,7 +140,20 @@ function signal:ConnectParallel(callback: callback) -- Connects a function to th
     task.synchronize()
 end
 
-function signal:Once(callback: callback) -- Disconnects after one fire
+--[=[
+    Connects a function to the signal once
+
+    @param callback (...any) -> ...any
+
+    @return Connection Object
+
+    ```lua
+    local Connection = signal:Once(function(...: any)
+        print(...)
+    end)
+    ```
+]=]
+function Signal:Once(callback: callback)
     local _connection = nil
 
     _connection = self:Connect(function(...)
@@ -81,7 +165,16 @@ function signal:Once(callback: callback) -- Disconnects after one fire
     return _connection
 end
 
-function signal:Wait() -- Waits until the signal is fired
+--[=[
+    Waits until the signal is fired
+
+    @return ... any
+
+    ```lua
+    local arg1 = signal:Wait()
+    ```
+]=]
+function Signal:Wait()
     local waitCoroutine = coroutine.running()
 
     self:Once(function(...)
@@ -91,7 +184,16 @@ function signal:Wait() -- Waits until the signal is fired
     return coroutine.yield()
 end
 
-function signal:Fire(...: any) -- Call the callbacks from every listener
+--[=[
+    Fires the signal
+
+    @param ... any
+
+    ```lua
+    signal:Fire("Hello", "World!")
+    ```
+]=]
+function Signal:Fire(...: any) -- Call the callbacks from every listener
     for i, v in ipairs(self._listeners) do
         if v.Connected then
             v._callback(...)
@@ -101,7 +203,16 @@ function signal:Fire(...: any) -- Call the callbacks from every listener
     end
 end
 
-function signal:FireParallel(...: any) -- Call the callbacks from every listener in Parallel
+--[=[
+    Fires the signal in parallel
+
+    @param ... any
+
+    ```lua
+    signal:FireParallel("Hello", "World!")
+    ```
+]=]
+function Signal:FireParallel(...: any) -- Call the callbacks from every listener in Parallel
     task.desynchronize()
 
     self:Fire(...)
@@ -109,7 +220,14 @@ function signal:FireParallel(...: any) -- Call the callbacks from every listener
     task.synchronize()
 end
 
-function signal:DisconnectAll() -- Disconnects all Listeners
+--[=[
+    Disconnects all listeners
+
+    ```lua
+    signal:DisconnectAll()
+    ```
+]=]
+function Signal:DisconnectAll()
     for i, v in ipairs(self._listeners) do
         v:Disconnect()
     end
@@ -117,11 +235,21 @@ function signal:DisconnectAll() -- Disconnects all Listeners
     table.clear(self._listeners)
 end
 
-signal.Destroy = signal.DisconnectAll -- Signal:Destroy() -> Signal:DisconnectAll()
+--[=[
+    @within Signal
+    @method Destroy
+
+    Disconnects all listeners
+
+    ```lua
+    signal:Destroy()
+    ```
+]=]
+Signal.Destroy = Signal.DisconnectAll
 
 -- Make the signal class strict
 
-setmetatable(signal, {
+setmetatable(Signal, {
     __index = function(_, key)
         error(string.format("Attempt to get signal::%s (not a valid member)", tostring(key)))
     end,
@@ -131,4 +259,4 @@ setmetatable(signal, {
     end
 })
 
-return signal
+return Signal
