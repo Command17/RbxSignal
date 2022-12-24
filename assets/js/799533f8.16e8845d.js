@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[876],{63891:s=>{s.exports=JSON.parse('{"sourceUrl":"https://github.com/Command17/RbxSignal/blob/main","baseUrl":"/RbxSignal/","classOrder":[],"apiCategories":[]}')}}]);
