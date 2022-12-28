@@ -196,7 +196,9 @@ end
 function Signal:Fire(...: any) -- Call the callbacks from every listener
     for i, v in ipairs(self._listeners) do
         if v.Connected then
-            v._callback(...)
+            task.spawn(function(...)
+                v._callback(...)
+            end, ...)
         else
             table.remove(self._listeners, i)
         end
